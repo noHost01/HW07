@@ -52,13 +52,54 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* LookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* UpDownAction;
+
+
+	// 마우스 회전
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* PitchAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* RollAction;
+
+	float PitchInput = 0.0f;
+	float RollInput = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	float RotationSpeed = 100.0f;
+
+
+	// 이동 기능
 	FVector2D MovementInput;
+
+	float UpDownInput = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	float MoveSpeed = 600.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	float LookSensitivity = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	float VerticalMoveSpeed = 1500.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	float AirControl = 0.5f;
+
+	bool bIsGrounded = false;
+
+
+
+	// 중력 기능
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gravity")
+	float Gravity = -100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gravity")
+	float VerticalVelocity = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gravity")
+	bool bUseGravity = true;
 
 public:	
 	// Called every frame
@@ -69,5 +110,10 @@ public:
 
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
+
+	void UpDown(const FInputActionValue& value);
+
+	void Pitch(const FInputActionValue& value);
+	void Roll(const FInputActionValue& value);
 
 };

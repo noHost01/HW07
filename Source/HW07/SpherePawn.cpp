@@ -74,13 +74,58 @@ void ASpherePawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!MovementInput.IsNearlyZero())
-	{
-		FVector MoveDirection = FVector(MovementInput.X, MovementInput.Y, 0.0f);
+	float CurrentMoveSpeed = bIsGrounded ? MoveSpeed : MoveSpeed * AirControl;
 
-		AddActorLocalOffset(MoveDirection * MoveSpeed * DeltaTime, true);
+	FVector MoveDelta = FVector(
+		MovementInput.X * CurrentMoveSpeed * DeltaTime,
+		MovementInput.Y * CurrentMoveSpeed * DeltaTime,
+		UpDownInput * CurrentMoveSpeed * DeltaTime
+	);
+
+	if (!MoveDelta.IsNearlyZero())
+	{
+		FHitResult InputHit;
+		AddActorLocalOffset(MoveDelta, true, &InputHit);
 	}
 
+	// 중력/착지 판정
+	if (bUseGravity)
+	{
+		float CurrentGravity = Gravity;
+
+		if (UpDownInput > 0.0f)
+		{
+			CurrentGravity = Gravity * 0.3f;
+		}
+
+		VerticalVelocity += CurrentGravity * DeltaTime;
+
+		FVector GravityDelta = FVector(0.0f, 0.0f, VerticalVelocity * DeltaTime);
+
+		FHitResult GravityHit;
+		AddActorWorldOffset(GravityDelta, true, &GravityHit);
+
+		if (GravityHit.bBlockingHit && GravityHit.ImpactNormal.Z > 0.5f)
+		{
+			VerticalVelocity = 0.0f;
+			bIsGrounded = true;
+		}
+		else
+		{
+			bIsGrounded = false;
+		}
+	}
+
+	FRotator RotationDelta = FRotator(
+		PitchInput * RotationSpeed * DeltaTime,
+		0.0f,
+		RollInput * RotationSpeed * DeltaTime
+	);
+
+	if (!RotationDelta.IsNearlyZero())
+	{
+		AddActorLocalRotation(RotationDelta);
+	}
 }
 
 // Called to bind functionality to input
@@ -91,7 +136,18 @@ void ASpherePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASpherePawn::Move);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Completed, this, &ASpherePawn::Move);
+
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASpherePawn::Look);
+
+		EnhancedInputComponent->BindAction(UpDownAction, ETriggerEvent::Triggered, this, &ASpherePawn::UpDown);
+		EnhancedInputComponent->BindAction(UpDownAction, ETriggerEvent::Completed, this, &ASpherePawn::UpDown);
+
+		EnhancedInputComponent->BindAction(PitchAction, ETriggerEvent::Triggered, this, &ASpherePawn::Pitch);
+		EnhancedInputComponent->BindAction(PitchAction, ETriggerEvent::Completed, this, &ASpherePawn::Pitch);
+
+		EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Triggered, this, &ASpherePawn::Roll);
+		EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Completed, this, &ASpherePawn::Roll);
 	}
 
 }
@@ -110,5 +166,20 @@ void ASpherePawn::Look(const FInputActionValue& value)
 	float DeltaTime = GetWorld()->GetDeltaSeconds();
 
 	AddActorLocalRotation(FRotator(0.0f, LookInput.X * LookSensitivity * DeltaTime, 0.0f));
+}
+
+void ASpherePawn::UpDown(const FInputActionValue& value)
+{
+	UpDownInput = value.Get<float>();
+}
+
+void ASpherePawn::Pitch(const FInputActionValue& value)
+{
+	PitchInput = value.Get<float>();
+}
+
+void ASpherePawn::Roll(const FInputActionValue& value)
+{
+	RollInput = value.Get<float>();
 }
 
