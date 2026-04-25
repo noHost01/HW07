@@ -4,6 +4,9 @@
 
 
 #include "SpherePawn.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "GameFramework/PlayerController.h"
 
 // Sets default values
 ASpherePawn::ASpherePawn()
@@ -41,6 +44,15 @@ ASpherePawn::ASpherePawn()
 void ASpherePawn::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
 	
 }
 
@@ -56,5 +68,19 @@ void ASpherePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASpherePawn::Move);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASpherePawn::Look);
+	}
+
+}
+
+void ASpherePawn::Move(const FInputActionValue& value)
+{
+}
+
+void ASpherePawn::Look(const FInputActionValue& value)
+{
 }
 
