@@ -6,6 +6,7 @@
 #include "SpherePawn.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "UObject/ConstructorHelpers.h"
 #include "GameFramework/PlayerController.h"
 
 // Sets default values
@@ -13,11 +14,23 @@ ASpherePawn::ASpherePawn()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	AutoPossessPlayer = EAutoReceiveInput::Player0;
 
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComponent"));
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
+
+
+	// Ãß°¡
+	// /Script/Engine.StaticMesh'/Engine/VREditor/BasicMeshes/SM_Ball_01.SM_Ball_01'
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> BodyStaticMesh(TEXT("/Engine/VREditor/BasicMeshes/SM_Ball_01.SM_Ball_01"));
+	if (BodyStaticMesh.Succeeded())
+	{
+		MeshComponent->SetStaticMesh(BodyStaticMesh.Object);
+	}
+
+
 
 	RootComponent = CollisionComponent;
 
@@ -61,6 +74,13 @@ void ASpherePawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (!MovementInput.IsNearlyZero())
+	{
+		FVector MoveDirection = FVector(MovementInput.X, MovementInput.Y, 0.0f);
+
+		AddActorLocalOffset(MoveDirection * MoveSpeed * DeltaTime, true);
+	}
+
 }
 
 // Called to bind functionality to input
@@ -78,9 +98,17 @@ void ASpherePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 void ASpherePawn::Move(const FInputActionValue& value)
 {
+	MovementInput = value.Get<FVector2D>();
+
+	UE_LOG(LogTemp, Warning, TEXT("Move Input: X=%f, Y=%f"), MovementInput.X, MovementInput.Y);
 }
 
 void ASpherePawn::Look(const FInputActionValue& value)
 {
+	FVector2D LookInput = value.Get<FVector2D>();
+
+	float DeltaTime = GetWorld()->GetDeltaSeconds();
+
+	AddActorLocalRotation(FRotator(0.0f, LookInput.X * LookSensitivity * DeltaTime, 0.0f));
 }
 
